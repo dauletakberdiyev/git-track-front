@@ -1,6 +1,6 @@
 <script setup lang="ts">
   const redirectToGithub = () => {
-    window.location.href = 'http://localhost:3000/auth/signin';
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/signin`;
   }
 
 </script>
