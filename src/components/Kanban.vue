@@ -115,102 +115,170 @@ watch(() => props.task, (newTask) => {
 </script>
 
 <template>
-  <div class="flex flex-col w-full">
-    <div class="text-xl p-4 border-b">
-      {{ repoTitle }} / Kanban Board
+  <div class="flex flex-col w-full h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="px-6 py-4">
+        <h1 class="text-lg font-medium text-gray-900">
+          {{ repoTitle }} <span class="text-gray-400">/</span> 
+          <span class="text-gray-600">Kanban Board</span>
+        </h1>
+      </div>
     </div>
-    <div class="flex justify-between h-full">
-      <div class="w-full border-r" v-for="status in statuses" :key="status.id">
-        <div class="text-lg text-center pt-2">{{ status.title }}</div>
 
+    <!-- Board -->
+    <div class="flex gap-4 p-6 overflow-x-auto h-full">
+      <div 
+        class="flex-shrink-0 w-80 bg-gray-100 rounded-lg p-4" 
+        v-for="status in statuses" 
+        :key="status.id"
+      >
+        <!-- Column Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            {{ status.title }}
+          </h2>
+          <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+            {{ tasksByStatus(status.id).length }}
+          </span>
+        </div>
+
+        <!-- Tasks -->
         <draggable 
           v-if="tasks.length > 0"
           :list="tasksByStatus(status.id)" 
           group="tasks" 
           itemKey="id"
-          class="min-h-[100px]"
+          class="space-y-3 min-h-[200px]"
           @end="onTaskDrop"
           :data-status-id="status.id"
         >
           <template #item="{ element: task }">
             <div 
-              class="border mb-2 w-96 mx-auto p-2 rounded-md bg-white"
+              class="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
               :data-task-id="task.id"
               @click="openTask(task.id)"
             >
-              <div class="text-xs mb-3">{{ task.key }}</div>
-              <div class="font-bold">{{ task.title }}</div>
+              <div class="text-xs text-gray-500 font-mono mb-2">{{ task.key }}</div>
+              <div class="text-sm font-medium text-gray-900 line-clamp-2">{{ task.title }}</div>
             </div>
           </template>
         </draggable>
 
-        <div 
+        <!-- Add Task Button -->
+        <button 
           @click="createNewTask"
-          class="border px-3 py-2 mx-auto w-24 text-center rounded-md cursor-pointer mt-5">
-          New task
-        </div>
+          class="w-full mt-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-white border border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-all duration-200"
+        >
+          + New task
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- New Task Modal -->
   <div 
     v-if="isNewTaskPopupOpen" 
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-5 rounded-md shadow-lg w-96">
-      <span class="text-md font-semibold">New Task to {{ repoTitle }}</span>
-      <!-- Task Name Input -->
-      <input 
-        v-model="newTaskName" 
-        type="text" 
-        placeholder="Task name" 
-        class="w-full p-2 border rounded mb-3"/>
+    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50"
+    @click.self="closePopup"
+  >
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">New Task</h3>
+        <p class="text-sm text-gray-500 mt-1">{{ repoTitle }}</p>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <input 
+          v-model="newTaskName" 
+          type="text" 
+          placeholder="Task name" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
 
-      <!-- Task Description Textarea -->
-      <textarea 
-        v-model="newTaskDescription" 
-        placeholder="Task description" 
-        class="w-full p-2 border rounded mb-3"></textarea>
+        <textarea 
+          v-model="newTaskDescription" 
+          placeholder="Task description" 
+          rows="4"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+        ></textarea>
 
-      <!-- Task Status Select -->
-      <select v-model="newTaskStatus" class="w-full p-2 border rounded mb-3">
-        <option value="1">Open</option>
-        <option value="2">In Progress</option>
-        <option value="3">Done</option>
-      </select>
-      <div class="flex justify-end mt-4">
-        <button @click="closePopup" class="px-4 py-2 bg-gray-300 rounded-lg mr-2">Cancel</button>
-        <button @click="saveTask" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Create</button>
+        <select 
+          v-model="newTaskStatus" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="1">Open</option>
+          <option value="2">In Progress</option>
+          <option value="3">Done</option>
+        </select>
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+        <button 
+          @click="closePopup" 
+          class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          @click="saveTask" 
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+        >
+          Create
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Edit Task Modal -->
   <div 
     v-if="isTaskPopupOpen" 
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-5 rounded-md shadow-lg w-96">
-      <span class="text-md font-semibold">{{ currentTaskKey }}</span>
-      <!-- Task Name Input -->
-      <input 
-        v-model="currentTaskTitle" 
-        type="text" 
-        placeholder="Task name" 
-        class="w-full p-2 border rounded mb-3"/>
+    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50"
+    @click.self="closeTaskPopup"
+  >
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">{{ currentTaskKey }}</h3>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <input 
+          v-model="currentTaskTitle" 
+          type="text" 
+          placeholder="Task name" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
 
-      <!-- Task Description Textarea -->
-      <textarea 
-        v-model="currentTaskDescription" 
-        placeholder="Task description" 
-        class="w-full p-2 border rounded mb-3"></textarea>
+        <textarea 
+          v-model="currentTaskDescription" 
+          placeholder="Task description" 
+          rows="4"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+        ></textarea>
 
-      <!-- Task Status Select -->
-      <select v-model="currentTaskStatus" class="w-full p-2 border rounded mb-3">
-        <option value="1">Open</option>
-        <option value="2">In Progress</option>
-        <option value="3">Done</option>
-      </select>
-      <div class="flex justify-end mt-4">
-        <button @click="closeTaskPopup" class="px-4 py-2 bg-gray-300 rounded-lg mr-2">Cancel</button>
-        <button @click="updateTask" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Save</button>
+        <select 
+          v-model="currentTaskStatus" 
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="1">Open</option>
+          <option value="2">In Progress</option>
+          <option value="3">Done</option>
+        </select>
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+        <button 
+          @click="closeTaskPopup" 
+          class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          @click="updateTask" 
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+        >
+          Save
+        </button>
       </div>
     </div>
   </div>
@@ -219,5 +287,12 @@ watch(() => props.task, (newTask) => {
 <style scoped>
 .v-move {
   transition: transform 0.3s ease;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

@@ -36,7 +36,7 @@ const router = createRouter({
       component: () => import('@/views/RepositoriesView.vue'),
     },
     {
-      path: '/:repoId',
+      path: '/repositories/:repoId',
       name: 'mainTask',
       component: () => import('@/views/MainTask.vue'),
     }
