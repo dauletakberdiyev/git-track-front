@@ -1,27 +1,47 @@
 <script setup lang="ts">
 import type { Repository } from '@/types/repository';
 import IconFolder from './icons/IconFolder.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   repos: Repository[],
   reposId: number
 }>()
 
 const isRepositoriesOpen = ref(true);
+const searchQuery = ref('');
 
 const toggleRepositories = () => {
   isRepositoriesOpen.value = !isRepositoriesOpen.value;
 };
+
+const filteredRepos = computed(() => {
+  // First filter by status (only show repos where status is true)
+  const activeRepos = props.repos.filter(repo => repo.status === true);
+  
+  // Then filter by search query if there is one
+  if (!searchQuery.value.trim()) {
+    return activeRepos;
+  }
+  
+  return activeRepos.filter(repo => 
+    repo.title.toLowerCase().startsWith(searchQuery.value.toLowerCase())
+  );
+});
 </script>
 
 <template>
   <div class="flex flex-col w-64 h-screen bg-white border-r border-gray-200">
     <!-- Logo/Brand -->
-    <div class="px-6 py-6 border-b border-gray-200">
-      <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
-        GitTrack
-      </h1>
+    <div class="border-b border-gray-200">
+      <router-link 
+        :to="{ name: 'repositories' }"
+        class="block px-6 py-6 hover:bg-gray-50 transition-colors duration-200"
+      >
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
+          GitTrack
+        </h1>
+      </router-link>
     </div>
 
     <!-- Navigation Section -->
@@ -50,23 +70,32 @@ const toggleRepositories = () => {
           :class="isRepositoriesOpen ? 'max-h-[2000px] opacity-100 mt-2' : 'max-h-0 opacity-0'"
         >
           <nav class="space-y-1">
-            <!-- All Repos Link -->
-            <router-link 
-              :to="{ name: 'repositories' }" 
-              class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-              </svg>
-              <span class="truncate">All Repositories</span>
-            </router-link>
+            <!-- Search Input -->
+            <div class="px-3 py-2">
+              <div class="relative">
+                <input 
+                  v-model="searchQuery"
+                  type="text" 
+                  placeholder="Search repositories..." 
+                  class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  class="h-4 w-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                >
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
 
             <!-- Divider -->
             <div class="border-t border-gray-200 my-2"></div>
 
             <!-- Individual Repos -->
             <router-link 
-              v-for="repo in repos" 
+              v-for="repo in filteredRepos" 
               :key="repo.id"
               :to="{ name: 'mainTask', params: { 'repoId': repo.id.toString() } }" 
               class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-200"
@@ -79,6 +108,11 @@ const toggleRepositories = () => {
               <IconFolder class="flex-shrink-0" />
               <span class="truncate">{{ repo.title }}</span>
             </router-link>
+
+            <!-- No Results Message -->
+            <div v-if="searchQuery && filteredRepos.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
+              No repositories found
+            </div>
           </nav>
         </div>
       </div>

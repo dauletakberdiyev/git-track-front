@@ -9,6 +9,14 @@ const updateRepos = () => {
   repoStore.update();
 };  
 
+const toggleStatus = async (repoId: number) => {
+  try {
+    await repoStore.updateStatus(repoId);
+  } catch (error) {
+    console.error('Failed to toggle status:', error);
+  }
+};
+
 onMounted(() => {
   repoStore.getAllRepos();  
 });
@@ -16,7 +24,7 @@ onMounted(() => {
 
 <template>
   <main class="min-h-screen bg-gray-50 py-8 px-4">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Repositories</h1>
@@ -31,6 +39,7 @@ onMounted(() => {
             <div class="w-12 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</div>
             <div class="flex-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</div>
             <div class="w-24 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</div>
+            <div class="w-24 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</div>
             <div class="w-24 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</div>
           </div>
         </div>
@@ -56,7 +65,21 @@ onMounted(() => {
                 </span>
               </div>
               <div class="w-24">
+                <!-- Toggle Button -->
+                <button
+                  @click="toggleStatus(repo.id)"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  :class="repo.status ? 'bg-blue-600' : 'bg-gray-300'"
+                >
+                  <span
+                    class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
+                    :class="repo.status ? 'translate-x-6' : 'translate-x-1'"
+                  />
+                </button>
+              </div>
+              <div class="w-24">
                 <router-link 
+                  v-if="repo.status"
                   :to="{name: 'mainTask', params: {'repoId': repo.id}}" 
                   class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 rounded-lg transition-all duration-200"
                 >
